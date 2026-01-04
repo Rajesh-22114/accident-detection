@@ -59,7 +59,6 @@ Anyone can open the link, paste an image URL, and check the prediction
 * after tha click predict, it will shows the prediction
 
 ### NOTE
-* wait while the render server is loaded then we see website
 
 * if it shows **server error** after clicking predict
 
