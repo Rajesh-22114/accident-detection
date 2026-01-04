@@ -1,0 +1,40 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor settings
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Local config
+*.sqlite3
+
+# Docker
+*.tar
+
+# TensorFlow / ML artifacts (optional)
+*.h5
+*.ckpt
+*.pb
+
+# Python build
+build/
+dist/
+*.egg-info/
