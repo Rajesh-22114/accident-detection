@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Traffic Accident Detection</title>
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #eef2f3, #d9e4ec);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: #ffffff;
+            width: 380px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 12px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        img {
+            max-width: 100%;
+            margin-top: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .accident {
+            background: #ffe6e6;
+            color: #d93025;
+        }
+
+        .non-accident {
+            background: #e6f4ea;
+            color: #188038;
+        }
+
+        .loading {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🚦 Accident Detection</h2>
+
+    <input id="imageUrl" type="text" placeholder="Paste image URL here">
+
+    <button onclick="predict()">Predict</button>
+
+    <img id="preview">
+
+    <div id="result" class="result loading"></div>
+</div>
+
+<script>
+async function predict() {
+    const url = document.getElementById("imageUrl").value;
+    const resultDiv = document.getElementById("result");
+    const img = document.getElementById("preview");
+
+    if (!url) {
+        alert("Please enter an image URL");
+        return;
+    }
+
+    img.src = url;
+    img.style.display = "block";
+
+    resultDiv.className = "result loading";
+    resultDiv.innerText = "⏳ Predicting...";
+
+    try {
+        const response = await fetch("/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image_url: url })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            resultDiv.innerText = "❌ " + data.error;
+            return;
+        }
+
+        if (data.prediction === "accident") {
+            resultDiv.className = "result accident";
+            resultDiv.innerText = "🚨 Accident Detected";
+        } else {
+            resultDiv.className = "result non-accident";
+            resultDiv.innerText = "✅ No Accident Detected";
+        }
+
+    } catch (err) {
+        resultDiv.innerText = "❌ Server error";
+    }
+}
+</script>
+
+</body>
+</html>
