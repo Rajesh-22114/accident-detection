@@ -24,5 +24,5 @@ COPY static ./static
 ENV PORT=10000
 EXPOSE 10000
 
-# 7️⃣ Start the app with Gunicorn WSGI server
-CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 app:app
+# 7️⃣ Start app with Gunicorn (1 worker, 4 threads for low RAM footprint & instant boot)
+CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 app:app

@@ -17,24 +17,34 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 
-# Resilient TFLite interpreter loading
-try:
-    import ai_edge_litert.interpreter as tflite
-except ImportError:
-    try:
-        import tflite_runtime.interpreter as tflite
-    except ImportError:
-        import tensorflow.lite as tflite
-
-# Load TFLite model
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "accident_model.tflite")
-interpreter = tflite.Interpreter(model_path=MODEL_PATH)
-interpreter.allocate_tensors()
-
-input_index = interpreter.get_input_details()[0]['index']
-output_index = interpreter.get_output_details()[0]['index']
-
+# Lazy TFLite interpreter initialization for instant startup (< 0.1s)
+_interpreter = None
+_input_index = None
+_output_index = None
 CLASS_NAMES = ['accident', 'non accident']
+
+def get_model():
+    """
+    Lazily loads and allocates TFLite interpreter on demand.
+    This prevents blocking server boot on top-level imports and health checks.
+    """
+    global _interpreter, _input_index, _output_index
+    if _interpreter is None:
+        try:
+            import ai_edge_litert.interpreter as tflite
+        except ImportError:
+            try:
+                import tflite_runtime.interpreter as tflite
+            except ImportError:
+                import tensorflow.lite as tflite
+
+        MODEL_PATH = os.path.join(os.path.dirname(__file__), "accident_model.tflite")
+        _interpreter = tflite.Interpreter(model_path=MODEL_PATH)
+        _interpreter.allocate_tensors()
+        _input_index = _interpreter.get_input_details()[0]['index']
+        _output_index = _interpreter.get_output_details()[0]['index']
+
+    return _interpreter, _input_index, _output_index
 
 def preprocess_image(pil_img):
     """
@@ -52,9 +62,14 @@ def preprocess_image(pil_img):
 def home():
     return render_template("index.html")
 
+@app.route("/health")
+def health():
+    return jsonify({"status": "healthy", "service": "AccidentVision AI"}), 200
+
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory(os.path.join(app.root_path, 'static'), filename)
+
 
 
 @app.route("/predict", methods=["POST"])
@@ -116,11 +131,13 @@ def predict():
 
     try:
         # Preprocess and infer
+        interpreter, input_index, output_index = get_model()
         x = preprocess_image(pil_image)
         interpreter.set_tensor(input_index, x)
         interpreter.invoke()
 
         preds = interpreter.get_tensor(output_index)[0]
+
         
         # Softmax probability calculation
         exp_preds = np.exp(preds - np.max(preds))
