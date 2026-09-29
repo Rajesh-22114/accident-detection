@@ -5,16 +5,17 @@ import base64
 from datetime import datetime
 from PIL import Image
 import numpy as np
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import requests
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 import warnings
-warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+
 
 # Resilient TFLite interpreter loading
 try:
@@ -50,6 +51,11 @@ def preprocess_image(pil_img):
 @app.route("/")
 def home():
     return render_template("index.html")
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(os.path.join(app.root_path, 'static'), filename)
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
